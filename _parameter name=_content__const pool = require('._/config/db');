@@ -1,0 +1,96 @@
+// ========== SELLERS MODEL ==========
+
+const sellerModel = {
+  // Buscar todos os vendedores de um tenant
+  async getAll(tenantId) {
+    const result = await pool.query(
+      `SELECT id, tenant_id, name, email, avatar, monthly_target, active, created_at, updated_at
+       FROM sellers 
+       WHERE tenant_id = $1 
+       ORDER BY name ASC`,
+      [tenantId]
+    );
+    return result.rows;
+  },
+
+  // Buscar vendedor por ID
+  async getById(id, tenantId) {
+    const result = await pool.query(
+      `SELECT id, tenant_id, name, email, avatar, monthly_target, active, created_at, updated_at
+       FROM sellers 
+       WHERE id = $1 AND tenant_id = $2`,
+      [id, tenantId]
+    );
+    return result.rows[0];
+  },
+
+  // Criar vendedor - agora define active = true por padrão
+  async create({ tenant_id, name, email, avatar, monthly_target = 50000 }) {
+    // Gerar avatar automático se não informado
+    const finalAvatar = avatar || name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+    
+    const result = await pool.query(
+      `INSERT INTO sellers (tenant_id, name, email, avatar, monthly_target, active)
+       VALUES ($1, $2, $3, $4, $5, true)
+       RETURNING id, tenant_id, name, email, avatar, monthly_target, active, created_at, updated_at`,
+      [tenant_id, name, email, finalAvatar, monthly_target]
+    );
+    return result.rows[0];
+  },
+
+  // Atualizar vendedor
+  async update(id, { name, email, avatar, monthly_target, active }, tenantId) {
+    const result = await pool.query(
+      `UPDATE sellers 
+       SET name = COALESCE($1, name),
+           email = COALESCE($2, email),
+           avatar = COALESCE($3, avatar),
+           monthly_target = COALESCE($4, monthly_target),
+           active = COALESCE($5, active),
+           updated_at = NOW()
+       WHERE id = $6 AND tenant_id = $7
+       RETURNING id, tenant_id, name, email, avatar, monthly_target, active, created_at, updated_at`,
+      [name, email, avatar, monthly_target, active, id, tenantId]
+    );
+    return result.rows[0];
+  },
+
+  // Deletar vendedor
+  async delete(id, tenantId) {
+    const result = await pool.query(
+      `DELETE FROM sellers WHERE id = $1 AND tenant_id = $2 RETURNING id`,
+      [id, tenantId]
+    );
+    return result.rows[0];
+  },
+
+  // Buscar métricas de vendedores (para Performance)
+  // Inclui vendedores com active = true OU active IS NULL (para mostrar vendedores novos)
+  async getSellersWithMetrics(tenantId) {
+    const result = await pool.query(
+      `SELECT 
+        s.id,
+        s.name,
+        s.email,
+        s.avatar,
+        s.monthly_target,
+        s.active,
+        COUNT(DISTINCT l.id) as total_leads,
+        COUNT(DISTINCT CASE WHEN l.status = 'ganho' THEN l.id END) as gained_leads,
+        COALESCE(SUM(CASE WHEN l.status = 'ganho' THEN l.value ELSE 0 END), 0) as revenue,
+        COUNT(DISTINCT a.id) as total_activities
+       FROM sellers s
+       LEFT JOIN leads l ON l.seller_id = s.id AND l.tenant_id = s.tenant_id
+       LEFT JOIN activities a ON a.lead_id = l.id AND a.tenant_id = s.tenant_id
+       WHERE s.tenant_id = $1 AND (s.active = true OR s.active IS NULL)
+       GROUP BY s.id
+       ORDER BY revenue DESC`,
+      [tenantId]
+    );
+    return result.rows;
+  }
+};
+
+module.exports = sellerModel;
+</parameter>
+<parameter name="path">/home/zac/estudosDev/ChronosTechCRM/saas-multitenant/backend/models/sellerModels.js</parameter>

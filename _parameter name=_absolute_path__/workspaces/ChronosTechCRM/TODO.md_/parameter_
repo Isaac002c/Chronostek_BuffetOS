@@ -1,0 +1,25 @@
+<parameter name="content"># ChronosTech CRM Security Fixes
+✅ Status: [x] Done | ⏳ In Progress | ⬜ Pending
+
+## Step 1: Create Security Audit TODO [DONE]
+- [x] Generate TODO.md
+
+## Step 2: Fix Leaks & Debug (Priority 1)
+- [ ] Remove /sellers/debug/all endpoint (sellersRoutes.js)
+- [ ] Remove console.logs exposing sensitive data (authRoutes.js, leadsRoutes.js, sellersRoutes.js, tenantContext.js)
+- [ ] Replace hardcoded JWT_SECRET fallbacks
+- [ ] Remove debug comments
+
+## Step 3: Add Permissions Middleware
+- [ ] leadsRoutes.js: Add checkPermission('leads:read/create/update/delete')
+- [ ] sellersRoutes.js: Add checkPermission('sellers:*')
+- [ ] clientRoutes.js: Add checkPermission('clients:*')
+- [ ] Audit other routes (contracts, documents, etc.)
+
+## Step 4: Test Security
+- [ ] Test unauth access → 401
+- [ ] Test tenant isolation (ID swap)
+- [ ] Restart backend & verify no errors
+
+## Step 5: Complete & Verify
+- [ ] attempt_completion</parameter>
